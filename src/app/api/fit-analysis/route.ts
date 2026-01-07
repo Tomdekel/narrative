@@ -112,6 +112,15 @@ export async function POST(request: Request) {
       .map((s: { signal: string }, i: number) => `${i + 1}. ${s.signal}`)
       .join('\n')
 
+    // Fetch user's career context for richer analysis
+    const { data: careerContext } = await supabase
+      .from('user_career_context')
+      .select('career_deep_dive, guidelines_tips')
+      .eq('user_id', user.id)
+      .single()
+
+    const contextText = careerContext?.career_deep_dive || ''
+
     // Call OpenAI for semantic analysis
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -120,22 +129,41 @@ export async function POST(request: Request) {
           role: 'system',
           content: `You are an expert career advisor analyzing how well a candidate's experience matches a job role.
 
-Analyze the candidate's claims against the role requirements and categorize each match:
+## Critical Rules for Analysis
 
-1. **Strong Fit** (score >= 0.7): Direct match with clear evidence. The candidate has explicitly demonstrated this skill/requirement.
+1. **NEVER mark common professional skills as gaps for senior candidates.** Skills like these are IMPLICIT in senior leadership roles:
+   - "Ability to translate complex needs into solutions" - ANY product leader does this
+   - "Strong communication skills" - demonstrated through leadership
+   - "Strategic thinking" - implicit in any VP/Director/Head role
+   - "Stakeholder management" - demonstrated by leading cross-functional teams
+   - "Problem solving" - demonstrated by any technical/product achievement
 
-2. **Loose Fit** (score 0.5-0.7): Related experience that partially addresses the requirement. The candidate has adjacent skills or experience.
+2. **Infer skills from demonstrated experience:**
+   - Led product teams → has stakeholder management, communication, strategic thinking
+   - Built ML platforms → has technical architecture skills, data modeling
+   - Managed cross-functional projects → has coordination, prioritization skills
+   - Shipped products at scale → has execution, delivery, quality skills
 
-3. **Stretch** (score 0.3-0.5): Transferable skills that could apply with some creativity. Requires explanation of how experience translates.
+3. **Be GENEROUS with matches.** If there's ANY reasonable interpretation where the candidate qualifies, count it as a match. The goal is to help candidates, not gatekeep.
 
-4. **Gaps**: Requirements where the candidate has no relevant experience. Include actionable suggestions.
+## Categories
 
-Be generous in interpretation - look for semantic matches, not just keyword matches. For example:
-- "Led product launches" matches requirements for "product management experience"
-- "Managed engineering teams" matches "leadership experience"
-- "Built data pipelines" can stretch to "data analysis experience"
+1. **Strong Fit**: Direct evidence in claims OR strongly implied by seniority/experience
+2. **Loose Fit**: Related experience that demonstrates the underlying competency
+3. **Stretch**: Transferable skills from adjacent domains
+4. **Gaps**: ONLY for truly missing hard requirements (specific certifications, specific tech stacks, specific industry experience) - NOT for soft skills or competencies a senior person would have
 
-Return your analysis as JSON with this structure:
+## Examples
+
+- Requirement: "Translate complex technical requirements into user-friendly solutions"
+  - If candidate "Led product for ML platform" → Strong Fit (product leaders do this daily)
+  - NOT a gap unless candidate has never done product work
+
+- Requirement: "5+ years experience in B2B SaaS"
+  - If candidate worked at B2B companies → Strong Fit
+  - If candidate worked at B2C but built enterprise features → Loose Fit
+
+Return your analysis as JSON:
 {
   "strong_fit": [{"requirement": string, "evidence_claims": string[], "reasoning": string}],
   "loose_fit": [{"requirement": string, "partial_match": string, "reasoning": string}],
@@ -159,8 +187,9 @@ ${signalsText || 'None identified'}
 
 # Candidate's Experience (Claims)
 ${claimsText}
+${contextText ? `\n# Additional Career Context\n${contextText}` : ''}
 
-Analyze how well this candidate fits the role. Be thorough and generous in finding matches.`
+Analyze how well this candidate fits the role. Be thorough and GENEROUS in finding matches. Remember: common professional skills are NOT gaps for senior candidates.`
         }
       ],
       response_format: { type: 'json_object' },
