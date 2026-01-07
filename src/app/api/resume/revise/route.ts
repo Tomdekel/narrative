@@ -1,15 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
+import type { GeneratedResume } from '@/server/services/resume-pipeline'
 
 const openai = new OpenAI()
-
-type GeneratedResume = {
-  professional_summary: string
-  experience_bullets: { text: string; impact_level: string }[]
-  skills_highlighted: string[]
-  tailoring_notes: string
-}
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -23,7 +17,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { roleId, currentResume, revisionRequest } = await request.json()
+    const { roleId, currentResume, revisionRequest } = await request.json() as {
+      roleId: string
+      currentResume: GeneratedResume
+      revisionRequest: string
+    }
 
     if (!roleId || !currentResume || !revisionRequest) {
       return NextResponse.json(
@@ -56,6 +54,13 @@ export async function POST(request: Request) {
       .map((c, i) => `${i + 1}. [${c.claim_type}] ${c.canonical_text}`)
       .join('\n')
 
+    // Format current resume for the prompt
+    const experienceText = currentResume.experience.map(job => `
+${job.company}
+${job.title} | ${job.start_date} - ${job.end_date}
+${job.achievements.map(a => `• ${a}`).join('\n')}
+`).join('\n')
+
     const systemPrompt = `You are an expert resume editor helping refine generated resume content.
 
 ## Your Role
@@ -70,29 +75,17 @@ Apply the user's revision request to improve the resume. You must:
 - If asked to remove content, do so cleanly
 - If asked to rephrase, keep the factual content accurate
 - Never invent metrics or achievements not in the claims
+- Maintain the exact JSON structure provided
 
-Return JSON with the same structure as the input:
-{
-  "professional_summary": "string",
-  "experience_bullets": [{"text": "string", "impact_level": "high|medium|low"}],
-  "skills_highlighted": ["string"],
-  "tailoring_notes": "string"
-}`
+Return JSON with the SAME structure as the input resume, including all fields.`
 
     const userPrompt = `Apply this revision to the resume:
 
 # REVISION REQUEST
 "${revisionRequest}"
 
-# CURRENT RESUME
-Professional Summary:
-${currentResume.professional_summary}
-
-Experience Bullets:
-${currentResume.experience_bullets.map((b: { text: string }) => `- ${b.text}`).join('\n')}
-
-Skills:
-${currentResume.skills_highlighted.join(', ')}
+# CURRENT RESUME (JSON)
+${JSON.stringify(currentResume, null, 2)}
 
 # TARGET ROLE
 ${role.title_raw} at ${role.company_raw || 'Company'}
@@ -102,7 +95,7 @@ Domain: ${role.domain}
 # AVAILABLE CLAIMS (for adding content)
 ${claimsText || 'No claims available'}
 
-Apply the revision request and return the updated resume content.`
+Apply the revision request and return the COMPLETE updated resume in the SAME JSON structure.`
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -119,9 +112,12 @@ Apply the revision request and return the updated resume content.`
       throw new Error('No content in OpenAI response')
     }
 
-    const revised = JSON.parse(content)
+    const revised = JSON.parse(content) as GeneratedResume
 
-    return NextResponse.json(revised)
+    return NextResponse.json({
+      success: true,
+      resume: revised
+    })
   } catch (error) {
     console.error('Resume revision error:', error)
     return NextResponse.json(
