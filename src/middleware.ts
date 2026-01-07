@@ -6,6 +6,7 @@ const redirects: Record<string, string> = {
   '/dashboard/artifacts': '/dashboard/story',
   '/dashboard/artifacts/upload': '/dashboard/story',
   '/dashboard/claims': '/dashboard/insights',
+  '/dashboard/resumes': '/dashboard/roles',
 }
 
 export async function middleware(request: NextRequest) {

@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { processArtifact } from '@/server/jobs/artifact-processor'
 import { processClaimExtraction } from '@/server/jobs/claim-extractor'
 
-export const maxDuration = 60 // Allow up to 60 seconds for processing
+export const maxDuration = 120 // Allow up to 120 seconds for text + claim extraction
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -113,7 +113,7 @@ export async function POST(request: Request) {
       console.error('Job creation error:', jobError)
     }
 
-    // Process immediately (text extraction)
+    // Process immediately (text extraction + claim extraction)
     try {
       if (job) {
         await processArtifact(job.id, {
@@ -121,6 +121,24 @@ export async function POST(request: Request) {
           storage_path: fileName,
           file_type: fileType,
         })
+
+        // After text extraction, run claim extraction immediately
+        // Find the pending claim extraction job that was created
+        const { data: claimJob } = await supabase
+          .from('processing_jobs')
+          .select('id')
+          .eq('entity_id', artifact.id)
+          .eq('job_type', 'extract_claims')
+          .eq('status', 'pending')
+          .single()
+
+        if (claimJob) {
+          // Run claim extraction
+          await processClaimExtraction(claimJob.id, {
+            artifact_id: artifact.id,
+            user_id: user.id,
+          })
+        }
       }
     } catch (processError) {
       console.error('Processing error:', processError)

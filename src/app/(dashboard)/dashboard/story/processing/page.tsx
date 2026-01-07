@@ -48,9 +48,9 @@ function ProcessingContent() {
         if (error) throw error
 
         const allProcessing = artifacts?.every(a => a.status === 'processing') ?? false
-        const allCompleted = artifacts?.every(a => a.status === 'completed') ?? false
+        const allCompleted = artifacts?.every(a => a.status === 'ready' || a.status === 'completed') ?? false
         const anyFailed = artifacts?.some(a => a.status === 'failed') ?? false
-        const anyExtracted = artifacts?.some(a => a.status === 'completed') ?? false
+        const anyExtracted = artifacts?.some(a => a.status === 'ready' || a.status === 'completed' || a.status === 'extract_claims') ?? false
 
         // Update steps based on status
         if (anyFailed) {
