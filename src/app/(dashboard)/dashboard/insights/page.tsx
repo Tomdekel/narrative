@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ThemesGrid } from '@/components/features/insights/themes-grid'
 import { StrengthsList } from '@/components/features/insights/strengths-list'
 import { ExperienceCard } from '@/components/features/insights/experience-card'
+import { AddInsight } from '@/components/features/insights/add-insight'
 
 type Claim = {
   id: string
@@ -135,12 +136,15 @@ export default async function InsightsPage() {
             claims={claims}
           />
         ))}
+
+        {/* Add Insight */}
+        <AddInsight />
       </div>
 
       {/* View All Link */}
       <div className="text-center pt-4">
-        <Link href="/dashboard/claims" className="text-sm text-blue-600 hover:text-blue-700">
-          View all {claimsList.length} insights in detail
+        <Link href="/dashboard/insights" className="text-sm text-blue-600 hover:text-blue-700">
+          View all {claimsList.length} insights
         </Link>
       </div>
     </div>

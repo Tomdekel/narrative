@@ -26,6 +26,7 @@ export async function updateClaimText(claimId: string, canonicalText: string) {
 
   revalidatePath(`/dashboard/claims/${claimId}`)
   revalidatePath('/dashboard/claims')
+  revalidatePath('/dashboard/insights')
   return { success: true }
 }
 
@@ -267,5 +268,42 @@ export async function deleteClaim(claimId: string) {
   }
 
   revalidatePath('/dashboard/claims')
+  revalidatePath('/dashboard/insights')
   return { success: true }
+}
+
+export async function createClaim(
+  canonicalText: string,
+  claimType: 'achievement' | 'responsibility' | 'skill' | 'credential' | 'context'
+) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: 'Unauthorized' }
+  }
+
+  const { data: claim, error } = await supabase
+    .from('claims')
+    .insert({
+      user_id: user.id,
+      canonical_text: canonicalText,
+      claim_type: claimType,
+      evidence_strength: 'self_reported',
+      confidence_score: 0.9,
+      truth_status: 'unverified',
+    })
+    .select()
+    .single()
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath('/dashboard/claims')
+  revalidatePath('/dashboard/insights')
+  return { success: true, claimId: claim.id }
 }

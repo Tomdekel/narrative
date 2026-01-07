@@ -19,6 +19,7 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
+    const isCv = formData.get('is_cv') === 'true'
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
@@ -58,6 +59,15 @@ export async function POST(request: Request) {
     else if (file.type === 'text/plain') fileType = 'txt'
     else if (file.type.includes('word')) fileType = 'docx'
 
+    // If this is a CV upload, unmark any existing CVs for this user
+    if (isCv) {
+      await supabase
+        .from('artifacts')
+        .update({ is_cv: false })
+        .eq('user_id', user.id)
+        .eq('is_cv', true)
+    }
+
     // Create artifact record
     const { data: artifact, error: dbError } = await supabase
       .from('artifacts')
@@ -67,6 +77,7 @@ export async function POST(request: Request) {
         file_type: fileType,
         storage_path: fileName,
         status: 'processing',
+        is_cv: isCv,
         metadata: {
           size: file.size,
           mime_type: file.type,

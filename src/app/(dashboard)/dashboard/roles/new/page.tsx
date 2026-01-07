@@ -10,16 +10,59 @@ import { createRoleIntent } from '@/server/actions/roles'
 
 export default function NewRolePage() {
   const router = useRouter()
+  const [jobUrl, setJobUrl] = useState('')
   const [jobDescription, setJobDescription] = useState('')
   const [roleTitle, setRoleTitle] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isFetching, setIsFetching] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const handleFetchUrl = async () => {
+    if (!jobUrl.trim()) {
+      toast.error('Please enter a URL')
+      return
+    }
+
+    // Validate URL format
+    try {
+      new URL(jobUrl)
+    } catch {
+      toast.error('Please enter a valid URL')
+      return
+    }
+
+    setIsFetching(true)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/jd-fetch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: jobUrl }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch job description')
+      }
+
+      setJobDescription(data.jobDescription)
+      toast.success('Job description extracted!')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch URL'
+      setError(message)
+      toast.error(message)
+    } finally {
+      setIsFetching(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!jobDescription.trim()) {
-      toast.error('Please paste a job description')
+      toast.error('Please paste a job description or fetch from URL')
       return
     }
 
@@ -41,6 +84,8 @@ export default function NewRolePage() {
     }
   }
 
+  const isLoading = isProcessing || isFetching
+
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-2">
@@ -52,7 +97,7 @@ export default function NewRolePage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Add Target Role</h1>
           <p className="text-gray-500 mt-1">
-            Paste a job description to analyze requirements
+            Paste a job description or enter a URL
           </p>
         </div>
       </div>
@@ -74,16 +119,69 @@ export default function NewRolePage() {
                 onChange={(e) => setRoleTitle(e.target.value)}
                 placeholder="e.g., Senior Software Engineer"
                 className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                disabled={isProcessing}
+                disabled={isLoading}
               />
               <p className="text-xs text-gray-500 mt-1">
                 Leave blank to auto-extract from the job description
               </p>
             </div>
 
+            {/* URL Input */}
+            <div>
+              <label htmlFor="jobUrl" className="block text-sm font-medium text-gray-700 mb-1">
+                Job Posting URL
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  id="jobUrl"
+                  value={jobUrl}
+                  onChange={(e) => setJobUrl(e.target.value)}
+                  placeholder="https://linkedin.com/jobs/... or any job posting URL"
+                  className="flex-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={isLoading}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleFetchUrl}
+                  disabled={isLoading || !jobUrl.trim()}
+                >
+                  {isFetching ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Fetching...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Fetch
+                    </>
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Enter a job posting URL and click Fetch to auto-extract the description
+              </p>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">or paste directly</span>
+              </div>
+            </div>
+
             <div>
               <label htmlFor="jobDescription" className="block text-sm font-medium text-gray-700 mb-1">
-                Paste Job Description *
+                Job Description *
               </label>
               <textarea
                 id="jobDescription"
@@ -92,7 +190,7 @@ export default function NewRolePage() {
                 placeholder="Paste the full job description here..."
                 className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none font-mono text-sm"
                 rows={15}
-                disabled={isProcessing}
+                disabled={isLoading}
               />
               <p className="text-xs text-gray-500 mt-1">
                 {jobDescription.length} characters
@@ -118,8 +216,8 @@ export default function NewRolePage() {
               <div className="text-sm text-gray-600">
                 <p className="font-medium text-gray-900">What happens next?</p>
                 <p className="mt-1">
-                  AI will analyze the job description to extract must-have requirements,
-                  nice-to-haves, implicit signals, and match them against your existing claims.
+                  AI will analyze the job description to extract key requirements,
+                  implicit signals, and match them against your career insights.
                 </p>
               </div>
             </div>
@@ -127,7 +225,7 @@ export default function NewRolePage() {
         </Card>
 
         <div className="flex gap-3">
-          <Button type="submit" disabled={isProcessing || !jobDescription.trim()}>
+          <Button type="submit" disabled={isLoading || !jobDescription.trim()}>
             {isProcessing ? (
               <>
                 <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -141,7 +239,7 @@ export default function NewRolePage() {
             )}
           </Button>
           <Link href="/dashboard/roles">
-            <Button variant="outline" type="button" disabled={isProcessing}>
+            <Button variant="outline" type="button" disabled={isLoading}>
               Cancel
             </Button>
           </Link>

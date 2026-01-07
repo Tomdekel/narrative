@@ -3,8 +3,6 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { getRecommendedClaims } from '@/lib/utils/matching'
-import { ClaimRecommendations } from '@/components/features/roles/claim-recommendations'
 import { HowYouFit } from '@/components/features/roles/how-you-fit'
 
 type PageProps = {
@@ -59,92 +57,9 @@ export default async function RoleDetailPage({ params }: PageProps) {
     notFound()
   }
 
-  // Fetch user's claims with skills
-  const { data: claims } = await supabase
-    .from('claims')
-    .select(`
-      id,
-      canonical_text,
-      claim_type,
-      confidence_score,
-      evidence_strength,
-      created_at,
-      claim_skill (
-        skills (
-          name
-        )
-      )
-    `)
-    .eq('user_id', user.id)
-
-  // Extract all skills from claims and prepare for matching
-  const userSkills = new Set<string>()
-  const claimsForMatching: {
-    id: string
-    canonical_text: string
-    claim_type: string
-    evidence_strength: string
-    confidence_score: number
-    skills: string[]
-    created_at: string
-  }[] = []
-
-  const claimsById: Record<string, { id: string; canonical_text: string; claim_type: string; evidence_strength: string }> = {}
-
-  claims?.forEach((claim) => {
-    const skills: string[] = []
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    claim.claim_skill?.forEach((cs: any) => {
-      if (cs.skills?.name) {
-        userSkills.add(cs.skills.name.toLowerCase())
-        skills.push(cs.skills.name)
-      }
-    })
-
-    claimsForMatching.push({
-      id: claim.id,
-      canonical_text: claim.canonical_text,
-      claim_type: claim.claim_type,
-      evidence_strength: claim.evidence_strength,
-      confidence_score: claim.confidence_score,
-      skills,
-      created_at: claim.created_at,
-    })
-
-    claimsById[claim.id] = {
-      id: claim.id,
-      canonical_text: claim.canonical_text,
-      claim_type: claim.claim_type,
-      evidence_strength: claim.evidence_strength,
-    }
-  })
-
-  // Calculate skill coverage
+  // Get requirements and signals
   const mustHaves = (role.must_haves || []) as Requirement[]
-  const niceToHaves = (role.nice_to_haves || []) as Requirement[]
-
-  // Calculate claim recommendations
-  const recommendedMatches = getRecommendedClaims(
-    claimsForMatching,
-    { must_haves: mustHaves, nice_to_haves: niceToHaves, seniority_level: role.level_inferred, domain: role.domain },
-    role.function_inferred,
-    { maxClaims: 15, minScore: 0.2 }
-  )
   const implicitSignals = (role.implicit_signals || []) as ImplicitSignal[]
-
-  const coveredMustHaves = mustHaves.filter((r) =>
-    userSkills.has(r.skill.toLowerCase())
-  )
-  const missingMustHaves = mustHaves.filter(
-    (r) => !userSkills.has(r.skill.toLowerCase())
-  )
-  const coveredNiceToHaves = niceToHaves.filter((r) =>
-    userSkills.has(r.skill.toLowerCase())
-  )
-
-  const coveragePercent = mustHaves.length > 0
-    ? Math.round((coveredMustHaves.length / mustHaves.length) * 100)
-    : 100
 
   return (
     <div className="space-y-8">
@@ -167,130 +82,49 @@ export default async function RoleDetailPage({ params }: PageProps) {
             <p className="text-gray-500">at {role.company_raw}</p>
           )}
         </div>
-        <Button variant="outline">Generate Resume</Button>
+        <Link href={`/dashboard/roles/${id}/generate`}>
+          <Button variant="outline">Generate Resume</Button>
+        </Link>
       </div>
 
-      {/* How You Fit - New categorized view */}
+      {/* How You Fit - Semantic analysis */}
       <HowYouFit
-        matches={recommendedMatches}
-        claims={claimsById}
-        mustHaves={mustHaves}
-        coveredMustHaves={coveredMustHaves}
-        missingMustHaves={missingMustHaves}
         roleId={id}
-      />
-
-      {/* Claim Recommendations (for selection) */}
-      <ClaimRecommendations
-        matches={recommendedMatches}
-        claims={claimsById}
-        roleId={id}
+        initialAnalysis={role.fit_analysis}
+        userCorrections={role.user_corrections}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Must-Haves */}
+          {/* Key Requirements */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                Must-Have Requirements
-                <span className="text-sm font-normal text-gray-500">
-                  ({coveredMustHaves.length}/{mustHaves.length} covered)
-                </span>
-              </CardTitle>
+              <CardTitle className="text-lg">Key Requirements</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {mustHaves.map((req, index) => {
-                  const isCovered = userSkills.has(req.skill.toLowerCase())
-                  return (
-                    <div
-                      key={index}
-                      className={`flex items-start gap-3 p-3 rounded-lg ${
-                        isCovered ? 'bg-green-50' : 'bg-red-50'
-                      }`}
-                    >
-                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        isCovered ? 'bg-green-200' : 'bg-red-200'
-                      }`}>
-                        {isCovered ? (
-                          <svg className="w-3 h-3 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        ) : (
-                          <svg className="w-3 h-3 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        )}
-                      </div>
-                      <div>
-                        <p className={`font-medium ${isCovered ? 'text-green-900' : 'text-red-900'}`}>
-                          {req.skill}
-                        </p>
-                        {req.experience_level && (
-                          <p className={`text-sm ${isCovered ? 'text-green-700' : 'text-red-700'}`}>
-                            {req.experience_level}
-                          </p>
-                        )}
-                      </div>
+                {mustHaves.map((req, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-3 p-3 rounded-lg bg-gray-50"
+                  >
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 bg-gray-200">
+                      <span className="text-xs font-medium text-gray-600">{index + 1}</span>
                     </div>
-                  )
-                })}
+                    <div>
+                      <p className="font-medium text-gray-900">{req.skill}</p>
+                      {req.experience_level && (
+                        <p className="text-sm text-gray-600">{req.experience_level}</p>
+                      )}
+                      {req.context && (
+                        <p className="text-xs text-gray-500 mt-1">{req.context}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
                 {mustHaves.length === 0 && (
-                  <p className="text-gray-500">No must-have requirements identified</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Nice-to-Haves */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                Nice-to-Have Requirements
-                <span className="text-sm font-normal text-gray-500">
-                  ({coveredNiceToHaves.length}/{niceToHaves.length} covered)
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {niceToHaves.map((req, index) => {
-                  const isCovered = userSkills.has(req.skill.toLowerCase())
-                  return (
-                    <div
-                      key={index}
-                      className={`flex items-start gap-3 p-3 rounded-lg ${
-                        isCovered ? 'bg-blue-50' : 'bg-gray-50'
-                      }`}
-                    >
-                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        isCovered ? 'bg-blue-200' : 'bg-gray-200'
-                      }`}>
-                        {isCovered ? (
-                          <svg className="w-3 h-3 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        ) : (
-                          <span className="w-2 h-2 rounded-full bg-gray-400" />
-                        )}
-                      </div>
-                      <div>
-                        <p className={`font-medium ${isCovered ? 'text-blue-900' : 'text-gray-700'}`}>
-                          {req.skill}
-                        </p>
-                        {req.experience_level && (
-                          <p className={`text-sm ${isCovered ? 'text-blue-700' : 'text-gray-500'}`}>
-                            {req.experience_level}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-                {niceToHaves.length === 0 && (
-                  <p className="text-gray-500">No nice-to-have requirements identified</p>
+                  <p className="text-gray-500">No key requirements identified</p>
                 )}
               </div>
             </CardContent>
