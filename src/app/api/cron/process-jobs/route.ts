@@ -6,10 +6,19 @@ import { processClaimExtraction } from '@/server/jobs/claim-extractor'
 // Verify cron secret to prevent unauthorized access
 const CRON_SECRET = process.env.CRON_SECRET
 
+export const maxDuration = 60 // Allow up to 60 seconds for processing
+
 export async function GET(request: Request) {
-  // Verify authorization
+  // Verify authorization - accept Vercel cron header or Bearer token
   const authHeader = request.headers.get('authorization')
-  if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+  const vercelCronHeader = request.headers.get('x-vercel-cron')
+
+  // Allow if: Vercel cron header present, or correct Bearer token, or no secret configured
+  const isVercelCron = vercelCronHeader === '1'
+  const hasValidToken = CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`
+  const noSecretConfigured = !CRON_SECRET
+
+  if (!isVercelCron && !hasValidToken && !noSecretConfigured) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
