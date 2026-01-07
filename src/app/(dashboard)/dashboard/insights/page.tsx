@@ -44,6 +44,11 @@ export default async function InsightsPage() {
   const claimsList: Claim[] = claims || []
   const artifactsList: Artifact[] = artifacts || []
 
+  // Get last updated timestamp
+  const lastUpdated = claimsList.length > 0
+    ? new Date(Math.max(...claimsList.map(c => new Date(c.created_at).getTime())))
+    : null
+
   // Extract themes from claim types and content
   const themes = extractThemes(claimsList)
 
@@ -91,6 +96,11 @@ export default async function InsightsPage() {
           <p className="text-gray-600 mt-1">
             Based on {claimsList.length} insights from {artifactsList.length} document{artifactsList.length !== 1 ? 's' : ''}
           </p>
+          {lastUpdated && (
+            <p className="text-xs text-gray-400 mt-1">
+              Last updated {formatRelativeTime(lastUpdated)}
+            </p>
+          )}
         </div>
         <Link href="/dashboard/story">
           <Button variant="outline" size="sm">
@@ -141,17 +151,64 @@ export default async function InsightsPage() {
         <AddInsight />
       </div>
 
-      {/* View All Link */}
-      <div className="text-center pt-4">
-        <Link href="/dashboard/insights" className="text-sm text-blue-600 hover:text-blue-700">
-          View all {claimsList.length} insights
-        </Link>
+      {/* Total count */}
+      <div className="text-center pt-4 text-sm text-gray-500">
+        Showing highlights from {claimsList.length} total insights
       </div>
     </div>
   )
 }
 
 // Helper functions
+
+function formatRelativeTime(date: Date): string {
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMins < 1) return 'just now'
+  if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`
+  if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`
+  if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`
+
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function isHighQualityClaim(claim: Claim): boolean {
+  const text = claim.canonical_text.toLowerCase()
+
+  // Filter out granular technical implementation details
+  const lowQualityPatterns = [
+    'buyercompanysize',
+    'buyersocialmediaplatforms',
+    'store structured record',
+    'map normalized value',
+    'enum in the kyc',
+    'lookup logic against',
+    'field-specific enum',
+    '2–10 employees',
+    'facebook.*linkedin',
+    'bq:',
+  ]
+
+  for (const pattern of lowQualityPatterns) {
+    if (text.includes(pattern) || new RegExp(pattern, 'i').test(text)) {
+      return false
+    }
+  }
+
+  // Require minimum length for meaningful content
+  if (claim.canonical_text.length < 30) return false
+
+  // Prioritize achievements and responsibilities with good confidence
+  if (claim.claim_type === 'achievement' && claim.confidence_score >= 0.5) return true
+  if (claim.claim_type === 'responsibility' && claim.confidence_score >= 0.6) return true
+  if (claim.claim_type === 'skill' && claim.confidence_score >= 0.7) return true
+
+  return claim.confidence_score >= 0.6
+}
 
 function extractThemes(claims: Claim[]): string[] {
   const themeKeywords: Record<string, string[]> = {
@@ -213,9 +270,12 @@ function groupClaimsByArtifact(claims: Claim[], artifacts: Artifact[]) {
   const groups: { artifact: Artifact | null; claims: Claim[] }[] = []
   const artifactMap = new Map(artifacts.map(a => [a.id, a]))
 
+  // Filter to high-quality claims only
+  const qualityClaims = claims.filter(isHighQualityClaim)
+
   // Group by artifact
   const claimsByArtifactId = new Map<string | null, Claim[]>()
-  for (const claim of claims) {
+  for (const claim of qualityClaims) {
     const key = claim.source_artifact_id
     if (!claimsByArtifactId.has(key)) {
       claimsByArtifactId.set(key, [])
@@ -223,12 +283,18 @@ function groupClaimsByArtifact(claims: Claim[], artifacts: Artifact[]) {
     claimsByArtifactId.get(key)!.push(claim)
   }
 
-  // Convert to array
+  // Convert to array, sorted by confidence
   for (const [artifactId, claimGroup] of claimsByArtifactId) {
-    groups.push({
-      artifact: artifactId ? artifactMap.get(artifactId) || null : null,
-      claims: claimGroup.slice(0, 5), // Limit to 5 per artifact
-    })
+    const sortedClaims = claimGroup
+      .sort((a, b) => b.confidence_score - a.confidence_score)
+      .slice(0, 5) // Limit to 5 per artifact
+
+    if (sortedClaims.length > 0) {
+      groups.push({
+        artifact: artifactId ? artifactMap.get(artifactId) || null : null,
+        claims: sortedClaims,
+      })
+    }
   }
 
   return groups
