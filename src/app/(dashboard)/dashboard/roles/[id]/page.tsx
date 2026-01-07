@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { getRecommendedClaims } from '@/lib/utils/matching'
 import { ClaimRecommendations } from '@/components/features/roles/claim-recommendations'
+import { HowYouFit } from '@/components/features/roles/how-you-fit'
 
 type PageProps = {
   params: Promise<{ id: string }>
@@ -169,47 +170,17 @@ export default async function RoleDetailPage({ params }: PageProps) {
         <Button variant="outline">Generate Resume</Button>
       </div>
 
-      {/* Coverage Overview */}
-      <Card>
-        <CardContent className="py-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-medium text-gray-900">Requirements Coverage</h3>
-            <span className={`text-2xl font-bold ${
-              coveragePercent >= 70 ? 'text-green-600' :
-              coveragePercent >= 40 ? 'text-yellow-600' :
-              'text-red-600'
-            }`}>
-              {coveragePercent}%
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
-            <div
-              className={`h-3 rounded-full ${
-                coveragePercent >= 70 ? 'bg-green-500' :
-                coveragePercent >= 40 ? 'bg-yellow-500' :
-                'bg-red-500'
-              }`}
-              style={{ width: `${coveragePercent}%` }}
-            />
-          </div>
-          <div className="grid grid-cols-3 gap-4 text-center text-sm">
-            <div>
-              <div className="text-2xl font-bold text-green-600">{coveredMustHaves.length}</div>
-              <div className="text-gray-500">Must-haves covered</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-red-600">{missingMustHaves.length}</div>
-              <div className="text-gray-500">Must-haves missing</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-blue-600">{coveredNiceToHaves.length}</div>
-              <div className="text-gray-500">Nice-to-haves covered</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* How You Fit - New categorized view */}
+      <HowYouFit
+        matches={recommendedMatches}
+        claims={claimsById}
+        mustHaves={mustHaves}
+        coveredMustHaves={coveredMustHaves}
+        missingMustHaves={missingMustHaves}
+        roleId={id}
+      />
 
-      {/* Claim Recommendations */}
+      {/* Claim Recommendations (for selection) */}
       <ClaimRecommendations
         matches={recommendedMatches}
         claims={claimsById}
