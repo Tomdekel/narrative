@@ -151,9 +151,11 @@ export default async function InsightsPage() {
         <AddInsight />
       </div>
 
-      {/* Total count */}
-      <div className="text-center pt-4 text-sm text-gray-500">
-        Showing highlights from {claimsList.length} total insights
+      {/* View All Link */}
+      <div className="text-center pt-4">
+        <Link href="/dashboard/claims" className="text-sm text-blue-600 hover:text-blue-700">
+          View all {claimsList.length} insights →
+        </Link>
       </div>
     </div>
   )

@@ -5,7 +5,7 @@ import { updateSession } from '@/lib/supabase/middleware'
 const redirects: Record<string, string> = {
   '/dashboard/artifacts': '/dashboard/story',
   '/dashboard/artifacts/upload': '/dashboard/story',
-  '/dashboard/claims': '/dashboard/insights',
+  // Note: /dashboard/claims is kept accessible for "View all insights" drill-down
   '/dashboard/resumes': '/dashboard/roles',
 }
 

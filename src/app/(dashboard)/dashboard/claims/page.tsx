@@ -65,14 +65,17 @@ export default async function ClaimsPage() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Claims</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">All Career Insights</h1>
           <p className="text-gray-500 mt-1 text-sm sm:text-base">
-            Evidence-backed statements extracted from your documents
+            {claims?.length || 0} insights extracted from your documents
           </p>
         </div>
         <div className="flex gap-2">
-          <Link href="/dashboard/artifacts/upload">
-            <Button className="w-full sm:w-auto">Upload Document</Button>
+          <Link href="/dashboard/insights">
+            <Button variant="outline" className="w-full sm:w-auto">← Back to Highlights</Button>
+          </Link>
+          <Link href="/dashboard/story">
+            <Button className="w-full sm:w-auto">Add Documents</Button>
           </Link>
         </div>
       </div>
