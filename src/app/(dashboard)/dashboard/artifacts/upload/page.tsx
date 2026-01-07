@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -12,7 +11,6 @@ export default function UploadPage() {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
-  const supabase = createClient()
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -67,65 +65,23 @@ export default function UploadPage() {
     setError(null)
 
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
+      // Use API route for upload + immediate processing
+      const formData = new FormData()
+      formData.append('file', file)
 
-      // Generate unique file path
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+      const response = await fetch('/api/artifacts/upload', {
+        method: 'POST',
+        body: formData,
+      })
 
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('artifacts')
-        .upload(fileName, file)
+      const result = await response.json()
 
-      if (uploadError) throw uploadError
-
-      // Determine file type
-      let fileType = 'unknown'
-      if (file.type === 'application/pdf') fileType = 'pdf'
-      else if (file.type === 'text/plain') fileType = 'txt'
-      else if (file.type.includes('word')) fileType = 'docx'
-
-      // Create artifact record
-      const { data: artifact, error: dbError } = await supabase
-        .from('artifacts')
-        .insert({
-          user_id: user.id,
-          file_name: file.name,
-          file_type: fileType,
-          storage_path: fileName,
-          status: 'pending',
-          metadata: {
-            size: file.size,
-            mime_type: file.type,
-          },
-        })
-        .select()
-        .single()
-
-      if (dbError) throw dbError
-
-      // Create processing job
-      const { error: jobError } = await supabase
-        .from('processing_jobs')
-        .insert({
-          user_id: user.id,
-          job_type: 'extract_text',
-          entity_type: 'artifact',
-          entity_id: artifact.id,
-          status: 'pending',
-          payload: {
-            artifact_id: artifact.id,
-            storage_path: fileName,
-            file_type: fileType,
-          },
-        })
-
-      if (jobError) throw jobError
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to upload file')
+      }
 
       // Redirect to artifact detail page
-      router.push(`/dashboard/artifacts/${artifact.id}`)
+      router.push(`/dashboard/artifacts/${result.artifactId}`)
       router.refresh()
     } catch (err) {
       console.error('Upload error:', err)
