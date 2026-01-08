@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { HowYouFit } from '@/components/features/roles/how-you-fit'
+import { StrategicAssessment } from '@/components/features/roles/strategic-assessment'
+import type { StrategicAssessment as StrategicAssessmentType } from '@/server/services/resume-pipeline/types'
 
 type PageProps = {
   params: Promise<{ id: string }>
@@ -92,6 +94,12 @@ export default async function RoleDetailPage({ params }: PageProps) {
         roleId={id}
         initialAnalysis={role.fit_analysis}
         userCorrections={role.user_corrections}
+      />
+
+      {/* Strategic Career Analysis */}
+      <StrategicAssessment
+        roleId={id}
+        initialAssessment={role.strategic_assessment as StrategicAssessmentType | null}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

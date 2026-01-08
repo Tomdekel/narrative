@@ -122,3 +122,106 @@ export type PipelineProgress = {
   stepName: string
   completed: boolean
 }
+
+// Strategic Assessment Types (Step 3.5)
+
+export type SignalStrength = 'critical' | 'important' | 'nice_to_have'
+export type Tone = 'very_positive' | 'positive' | 'neutral' | 'concerning'
+export type Severity = 'blocker' | 'yellow_flag' | 'minor'
+export type SeniorityAssessment = 'over_senior' | 'right_fit' | 'under_senior'
+export type Recommendation = 'strong_apply' | 'apply_with_strategy' | 'stretch_apply' | 'consider_alternatives'
+export type SuccessProbability = 'high' | 'medium' | 'low'
+
+export type RoleDeconstruction = {
+  actual_priorities: {
+    requirement: string
+    why_it_matters: string
+    signal_strength: SignalStrength
+  }[]
+  marketing_vs_reality: {
+    stated: string
+    actual_meaning: string
+  }[]
+  hiring_signals: {
+    signal: string
+    evidence_from_jd: string
+  }[]
+}
+
+export type CompanyView = {
+  first_impression: {
+    headline: string
+    tone: Tone
+  }
+  perceived_strengths: {
+    strength: string
+    from_company_pov: string
+  }[]
+  perceived_weaknesses: {
+    concern: string
+    severity: Severity
+  }[]
+  likely_objections: {
+    objection: string
+    hiring_manager_thinking: string
+    suggested_preempt: string
+  }[]
+}
+
+export type HardTruths = {
+  seniority_signal: {
+    assessment: SeniorityAssessment
+    explanation: string
+  }
+  trajectory_concerns: {
+    concern: string
+    how_it_looks: string
+  }[]
+  unhideable_gaps: {
+    gap: string
+    best_approach: string
+  }[]
+  net_fit_assessment: {
+    recommendation: Recommendation
+    honest_take: string
+    success_probability: SuccessProbability
+  }
+}
+
+export type SignalStrategy = {
+  signals_to_amplify: {
+    signal: string
+    how_to_amplify: string
+  }[]
+  signals_to_downplay: {
+    signal: string
+    how_to_reframe: string
+  }[]
+  narrative_angle: {
+    primary_story: string
+    opens_with: string
+  }
+}
+
+export type NextSteps = {
+  stories_to_prepare: {
+    story_prompt: string
+    interview_question_type: string
+  }[]
+  positioning_advice: {
+    advice: string
+    reasoning: string
+  }[]
+  before_applying: {
+    action: string
+    why: string
+  }[]
+}
+
+export type StrategicAssessment = {
+  role_deconstruction: RoleDeconstruction
+  company_view: CompanyView
+  hard_truths: HardTruths
+  signal_strategy: SignalStrategy
+  next_steps: NextSteps
+}

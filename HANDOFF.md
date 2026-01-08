@@ -15,6 +15,38 @@
 
 ## Recent Progress (Jan 7, 2026)
 
+### NEW - Strategic Career Analysis Feature
+Added ChatGPT-level strategic career analysis with brutally honest insights from a hiring manager's perspective.
+
+**What it provides:**
+- **Role Deconstruction**: What the JD actually means vs what it says
+- **Company View**: How hiring managers will perceive your application (first impression, strengths, weaknesses, likely objections)
+- **Hard Truths**: Seniority fit, trajectory concerns, unhideable gaps
+- **Signal Strategy**: What to amplify, what to downplay, your positioning narrative
+- **Next Steps**: Stories to prepare, positioning advice, pre-application checklist
+
+**Files created:**
+- `/src/app/api/strategic-assessment/route.ts` - API endpoint
+- `/src/lib/openai/prompts/strategic-assessment.ts` - Senior recruiter persona prompt
+- `/src/components/features/roles/strategic-assessment.tsx` - Main container component
+- `/src/components/features/roles/strategic/` - Sub-components:
+  - `expandable-section.tsx` - Collapsible section UI
+  - `assessment-summary.tsx` - Always-visible net assessment
+  - `role-deconstruction.tsx` - JD analysis
+  - `company-view.tsx` - Hiring manager perspective
+  - `hard-truths.tsx` - Career gaps and concerns
+  - `signal-strategy.tsx` - Positioning advice
+  - `next-steps.tsx` - Action items
+
+**Files modified:**
+- `/src/server/services/resume-pipeline/types.ts` - Added `StrategicAssessment` types
+- `/src/app/(dashboard)/dashboard/roles/[id]/page.tsx` - Integrated strategic analysis UI
+
+**Database:**
+- Added `strategic_assessment` JSONB column to `role_intents` table (cached results)
+
+---
+
 ### Completed - Multi-Step Resume Pipeline
 Replaced single-prompt resume generation with a 4-step pipeline:
 
@@ -79,8 +111,12 @@ Step 4: Compose Final CV (GPT-4o)
 | File | Purpose |
 |------|---------|
 | `/src/server/services/resume-pipeline/` | Resume generation pipeline |
-| `/src/app/api/resume/generate/route.ts` | API endpoint |
+| `/src/app/api/resume/generate/route.ts` | Resume generation API endpoint |
+| `/src/app/api/strategic-assessment/route.ts` | Strategic career analysis API |
+| `/src/app/(dashboard)/dashboard/roles/[id]/page.tsx` | Role detail page with analysis |
 | `/src/app/(dashboard)/dashboard/roles/[id]/generate/page.tsx` | UI for generated resume |
+| `/src/components/features/roles/strategic-assessment.tsx` | Strategic analysis UI |
+| `/src/lib/openai/prompts/strategic-assessment.ts` | Recruiter persona prompt |
 | `/src/components/layout/sidebar.tsx` | Navigation sidebar |
 | `/src/middleware.ts` | Route redirects |
 | `/src/app/api/fit-analysis/route.ts` | Role fit analysis |
@@ -118,6 +154,7 @@ Required env vars in `.env.local`:
 3. ~~**Fix sidebar link**~~ - DONE (both links now go to /dashboard/roles)
 4. ~~**Deploy to production**~~ - DONE (deployed to https://narrative-omega.vercel.app)
 5. ~~**Test resume generation**~~ - DONE (verified guidelines working, education filtering improved)
+6. ~~**Strategic Career Analysis**~~ - DONE (full implementation with 5 analysis sections)
 
 ## Known Remaining Issues
 
@@ -127,11 +164,13 @@ Required env vars in `.env.local`:
 
 ## Next Steps
 
-1. **Improve CV parsing** - Better extraction of education data from source CV
-2. **Add education year extraction** - Parse actual graduation years from CV text
-3. **Consider re-processing existing CVs** - To get cleaner education data
+1. **Deploy Strategic Analysis** - Push to production and test with real users
+2. **Improve CV parsing** - Better extraction of education data from source CV
+3. **Feed strategic insights into resume generation** - Use signal strategy to enhance Step 4 compose
+4. **Add education year extraction** - Parse actual graduation years from CV text
 
 ---
 
-## Detailed Plan File
-See `/Users/tomdekel/.claude/plans/serene-swimming-sutton.md` for full implementation plan.
+## Detailed Plan Files
+- `/Users/tomdekel/.claude/plans/serene-swimming-sutton.md` - Original resume pipeline plan
+- `/Users/tomdekel/.claude/plans/wondrous-painting-wall.md` - Strategic analysis feature plan
