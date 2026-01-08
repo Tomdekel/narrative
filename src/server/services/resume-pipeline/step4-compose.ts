@@ -180,11 +180,19 @@ ${experienceText}
 
 ## EDUCATION
 ${cvStructure.education
-  .filter(edu => edu.institution && edu.degree && !edu.degree.includes('null') && !edu.institution.includes('null'))
+  .filter(edu => {
+    const badValues = ['null', 'undefined', 'optional', 'N/A', 'n/a']
+    const hasBadInstitution = !edu.institution || badValues.some(v => edu.institution.toLowerCase().includes(v))
+    const hasBadDegree = !edu.degree || badValues.some(v => edu.degree.toLowerCase().includes(v))
+    return !hasBadInstitution && !hasBadDegree
+  })
   .map(edu => {
-    const field = edu.field && edu.field !== 'null' ? ` in ${edu.field}` : ''
-    const honors = edu.honors && edu.honors !== 'null' ? ` (${edu.honors})` : ''
-    return `${edu.degree}${field}, ${edu.institution}, ${edu.year}${honors}`
+    const badValues = ['null', 'undefined', 'optional', 'N/A', 'n/a']
+    const isBad = (val: string | undefined) => !val || badValues.some(v => val.toLowerCase().includes(v))
+    const field = !isBad(edu.field) ? ` in ${edu.field}` : ''
+    const honors = !isBad(edu.honors) ? ` (${edu.honors})` : ''
+    const year = !isBad(edu.year) ? edu.year : ''
+    return `${edu.degree}${field}, ${edu.institution}${year ? `, ${year}` : ''}${honors}`
   })
   .join('\n')}
 

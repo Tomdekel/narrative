@@ -1,0 +1,507 @@
+{
+  "branchName": "ralph/phase-1-foundation",
+  "projectName": "Narrative",
+  "userStories": [
+    {
+      "id": "NAR-001",
+      "title": "Project setup with Next.js and Supabase",
+      "acceptanceCriteria": [
+        "Next.js 14 app router initialized",
+        "Supabase client configured",
+        "Environment variables template created",
+        "Basic layout component",
+        "typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "Use app router, not pages"
+    },
+    {
+      "id": "NAR-002",
+      "title": "Supabase Auth with email login",
+      "acceptanceCriteria": [
+        "Login page with email/password",
+        "Signup flow",
+        "Protected routes middleware",
+        "User session context",
+        "typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "NAR-003",
+      "title": "Database: people table",
+      "acceptanceCriteria": [
+        "Migration for people table",
+        "Fields: person_id, name, headline, location, seniority_band, timestamps",
+        "RLS policies for user owns their person record",
+        "TypeScript types generated",
+        "typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "person_id links to auth.users"
+    },
+    {
+      "id": "NAR-004",
+      "title": "Database: companies table",
+      "acceptanceCriteria": [
+        "Migration for companies table",
+        "Fields: company_id, name, industry_tags[], stage, size_band, geo",
+        "Stage and size_band as enums",
+        "TypeScript types generated",
+        "typecheck passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "Companies are shared, not per-user"
+    },
+    {
+      "id": "NAR-005",
+      "title": "Database: positions table",
+      "acceptanceCriteria": [
+        "Migration for positions table",
+        "Fields: position_id, person_id, company_id, title_raw, title_normalized, level_guess, dates, summary, scope JSON, confidence",
+        "Foreign keys to people and companies",
+        "RLS policies",
+        "typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "level_guess enum: IC, Manager, Director, GM"
+    },
+    {
+      "id": "NAR-006",
+      "title": "Database: projects table",
+      "acceptanceCriteria": [
+        "Migration for projects table",
+        "Fields: project_id, position_id (nullable), name, description, dates, status, scope JSON, novelty, visibility, confidence",
+        "Foreign key to positions",
+        "RLS policies",
+        "typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "NAR-007",
+      "title": "Database: achievements and metrics tables",
+      "acceptanceCriteria": [
+        "Migration for achievements table",
+        "Fields: achievement_id, project_id, type, statement, timeframe, confidence, impact_strength",
+        "Migration for metrics table",
+        "Fields: metric_id, achievement_id, name, value, unit, direction, baseline_value, confidence",
+        "Foreign keys",
+        "typecheck passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "achievement type enum: revenue, cost, latency, adoption, etc."
+    },
+    {
+      "id": "NAR-008",
+      "title": "Database: skills and domains tables",
+      "acceptanceCriteria": [
+        "Migration for skills table with embedding vector column",
+        "Fields: skill_id, name_raw, name_canonical, category, sub_category, aliases[], is_hard_skill, is_tool, is_domain",
+        "Migration for domains table with parent_domain_id",
+        "Enable pgvector extension",
+        "typecheck passes"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "pgvector for embeddings"
+    },
+    {
+      "id": "NAR-009",
+      "title": "Database: artifacts and evidence_snippets tables",
+      "acceptanceCriteria": [
+        "Migration for artifacts table",
+        "Fields: artifact_id, person_id, type, title, source_url, hash, parser_version, visibility, metadata JSONB, status",
+        "Migration for evidence_snippets with embedding vector",
+        "Foreign keys and RLS",
+        "typecheck passes"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "artifact status enum: pending, processing, ready, failed"
+    },
+    {
+      "id": "NAR-010",
+      "title": "Database: claims table (CORE)",
+      "acceptanceCriteria": [
+        "Migration for claims table",
+        "Fields: claim_id, person_id, claim_type, canonical_text, variants JSON[], truth_status, seniority_signal, evidence_strength, risk_flags[], timeframe",
+        "claim_type enum: achievement, responsibility, leadership, skill_assertion",
+        "truth_status enum: evidenced, self_asserted, inferred",
+        "RLS policies",
+        "typecheck passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "Claims are the most important table"
+    },
+    {
+      "id": "NAR-011",
+      "title": "Database: role_intents table",
+      "acceptanceCriteria": [
+        "Migration for role_intents table",
+        "Fields: role_intent_id, source, title_raw, company_raw, level_inferred, function_inferred, must_haves JSON, nice_to_haves JSON, implicit_signals JSON, extraction_confidence",
+        "source enum: pasted_jd, url",
+        "RLS policies",
+        "typecheck passes"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "NAR-012",
+      "title": "Database: all join tables",
+      "acceptanceCriteria": [
+        "claim_support (claim_id, snippet_id, support_type, strength)",
+        "claim_about_position (claim_id, position_id, relevance, primary)",
+        "claim_about_project (claim_id, project_id, relevance, primary)",
+        "claim_skill (claim_id, skill_id, strength, evidence_backed)",
+        "project_domain (project_id, domain_id)",
+        "roleintent_skill (role_intent_id, skill_id, requirement_type, priority, weight)",
+        "claim_roleintent_match (claim_id, role_intent_id, match_score, reason_codes JSON)",
+        "All foreign keys and indexes",
+        "typecheck passes"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": "These are the graph edges"
+    },
+    {
+      "id": "NAR-013",
+      "title": "Database: resume_drafts and user_edits tables",
+      "acceptanceCriteria": [
+        "Migration for resume_drafts",
+        "Fields: draft_id, person_id, role_intent_id, narrative_config JSON, selected_claim_ids[], sections JSON",
+        "Migration for user_edits",
+        "Fields: edit_id, draft_id, before_text, after_text, affected_claim_ids[], edit_intent",
+        "RLS policies",
+        "typecheck passes"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": "narrative_config includes risk_posture, emphasis weights, tone, length"
+    },
+    {
+      "id": "NAR-014",
+      "title": "Database: artifact_processing_jobs table",
+      "acceptanceCriteria": [
+        "Migration for artifact_processing_jobs",
+        "Fields: job_id, user_id, artifact_id, status, step, retries, error, timestamps",
+        "status enum: pending, running, done, failed",
+        "step enum: extract, chunk, embed, claim_extract, link",
+        "typecheck passes"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": "For async ingestion pipeline"
+    },
+    {
+      "id": "NAR-015",
+      "title": "Dashboard layout with navigation",
+      "acceptanceCriteria": [
+        "Authenticated dashboard layout",
+        "Sidebar navigation: Profile, Experience, Claims, Roles, Drafts",
+        "User menu with logout",
+        "Responsive design",
+        "typecheck passes"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "NAR-016",
+      "title": "Profile page - basic info",
+      "acceptanceCriteria": [
+        "View/edit name, headline, location",
+        "Save to people table",
+        "Loading and error states",
+        "typecheck passes"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "NAR-017",
+      "title": "Experience page - positions list",
+      "acceptanceCriteria": [
+        "List all positions for user",
+        "Add new position form (company, title, dates)",
+        "Edit position",
+        "Delete position",
+        "typecheck passes"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": "Company autocomplete can come later"
+    },
+    {
+      "id": "NAR-018",
+      "title": "Experience page - projects under positions",
+      "acceptanceCriteria": [
+        "Expandable position cards showing projects",
+        "Add project to position",
+        "Edit project details",
+        "Delete project",
+        "typecheck passes"
+      ],
+      "priority": 18,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "NAR-019",
+      "title": "Artifact upload with Supabase Storage",
+      "acceptanceCriteria": [
+        "Upload page/modal for artifacts",
+        "Accept PDF, DOCX, TXT",
+        "File stored in Supabase Storage",
+        "Artifact record created with status pending",
+        "Job record created",
+        "typecheck passes"
+      ],
+      "priority": 19,
+      "passes": false,
+      "notes": "Processing happens async"
+    },
+    {
+      "id": "NAR-020",
+      "title": "Claims list page",
+      "acceptanceCriteria": [
+        "List all claims for user",
+        "Filter by claim_type",
+        "Filter by truth_status",
+        "Show evidence_strength indicator",
+        "typecheck passes"
+      ],
+      "priority": 20,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "NAR-021",
+      "title": "Claim editing UI",
+      "acceptanceCriteria": [
+        "Edit canonical_text",
+        "Add/remove variants",
+        "Set truth_status",
+        "Mark as preferred / rarely use / never use",
+        "View linked evidence snippets",
+        "typecheck passes"
+      ],
+      "priority": 21,
+      "passes": false,
+      "notes": "Critical UX - users must control claims"
+    },
+    {
+      "id": "NAR-022",
+      "title": "Manual claim creation",
+      "acceptanceCriteria": [
+        "Create new claim form",
+        "Select claim_type",
+        "Enter canonical_text",
+        "Link to position or project (optional)",
+        "Mark as self_asserted",
+        "typecheck passes"
+      ],
+      "priority": 22,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "NAR-023",
+      "title": "Role intent creation - paste JD",
+      "acceptanceCriteria": [
+        "New role page with textarea for JD",
+        "Save raw JD to role_intents",
+        "Show parsing status",
+        "typecheck passes"
+      ],
+      "priority": 23,
+      "passes": false,
+      "notes": "AI parsing comes next"
+    },
+    {
+      "id": "NAR-024",
+      "title": "JD parsing with LLM",
+      "acceptanceCriteria": [
+        "API route to parse JD",
+        "Extract: title, company, level, function",
+        "Extract: must_haves, nice_to_haves",
+        "Extract: implicit_signals",
+        "Update role_intent record",
+        "typecheck passes"
+      ],
+      "priority": 24,
+      "passes": false,
+      "notes": "Use structured output, not freeform"
+    },
+    {
+      "id": "NAR-025",
+      "title": "Role intent display page",
+      "acceptanceCriteria": [
+        "Show parsed role details",
+        "List must_haves and nice_to_haves",
+        "Show implicit_signals",
+        "Allow user to edit/correct",
+        "typecheck passes"
+      ],
+      "priority": 25,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "NAR-026",
+      "title": "Claim-RoleIntent matching algorithm",
+      "acceptanceCriteria": [
+        "Function to score claim against role_intent",
+        "Factors: skill overlap, domain overlap, seniority alignment, evidence strength, recency",
+        "Store in claim_roleintent_match table",
+        "Return ranked claims for a role",
+        "typecheck passes"
+      ],
+      "priority": 26,
+      "passes": false,
+      "notes": "Deterministic, not prompt-based"
+    },
+    {
+      "id": "NAR-027",
+      "title": "Claim selection UI for resume draft",
+      "acceptanceCriteria": [
+        "Given a role_intent, show ranked claims",
+        "User can select/deselect claims",
+        "Show match_score and reason",
+        "Diversity warnings (too many from one project)",
+        "Coverage warnings (missing must-have skills)",
+        "typecheck passes"
+      ],
+      "priority": 27,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "NAR-028",
+      "title": "Narrative config settings",
+      "acceptanceCriteria": [
+        "UI to set risk_posture: safe, balanced, bold",
+        "Emphasis sliders: leadership, strategy, execution, technical",
+        "Tone selector",
+        "Length preference",
+        "Save to resume_draft.narrative_config",
+        "typecheck passes"
+      ],
+      "priority": 28,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "NAR-029",
+      "title": "Resume draft generation",
+      "acceptanceCriteria": [
+        "API route to generate resume sections",
+        "Input: selected_claim_ids + narrative_config",
+        "Output: summary, experience bullets, skills",
+        "Each bullet traceable to claim_id",
+        "Save to resume_draft.sections",
+        "typecheck passes"
+      ],
+      "priority": 29,
+      "passes": false,
+      "notes": "Claims drive generation, not freeform prompting"
+    },
+    {
+      "id": "NAR-030",
+      "title": "Resume preview and edit",
+      "acceptanceCriteria": [
+        "Display generated resume",
+        "Inline editing of text",
+        "Track edits in user_edits table",
+        "Show which claim each bullet came from",
+        "typecheck passes"
+      ],
+      "priority": 30,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "NAR-031",
+      "title": "Resume export to PDF",
+      "acceptanceCriteria": [
+        "Export button generates PDF",
+        "Clean, professional formatting",
+        "Download file",
+        "typecheck passes"
+      ],
+      "priority": 31,
+      "passes": false,
+      "notes": "Use react-pdf or similar"
+    },
+    {
+      "id": "NAR-032",
+      "title": "Artifact text extraction worker",
+      "acceptanceCriteria": [
+        "Serverless function triggered by job queue",
+        "Extract text from PDF/DOCX",
+        "Update artifact with extracted text",
+        "Move job to next step",
+        "typecheck passes"
+      ],
+      "priority": 32,
+      "passes": false,
+      "notes": "Use pdf-parse, mammoth for docx"
+    },
+    {
+      "id": "NAR-033",
+      "title": "Artifact chunking and embedding worker",
+      "acceptanceCriteria": [
+        "Chunk extracted text into snippets",
+        "Generate embeddings for each snippet",
+        "Store in evidence_snippets with vectors",
+        "Move job to next step",
+        "typecheck passes"
+      ],
+      "priority": 33,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "NAR-034",
+      "title": "Claim extraction from artifacts",
+      "acceptanceCriteria": [
+        "LLM extracts candidate claims from snippets",
+        "Create claim records with truth_status inferred",
+        "Link claims to evidence_snippets via claim_support",
+        "Mark job done",
+        "typecheck passes"
+      ],
+      "priority": 34,
+      "passes": false,
+      "notes": "User reviews and approves claims later"
+    },
+    {
+      "id": "NAR-035",
+      "title": "Processing status UI",
+      "acceptanceCriteria": [
+        "Show artifact processing progress",
+        "Display current step",
+        "Show errors if failed",
+        "Auto-refresh or polling",
+        "typecheck passes"
+      ],
+      "priority": 35,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

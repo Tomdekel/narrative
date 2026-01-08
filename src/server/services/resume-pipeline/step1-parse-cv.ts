@@ -19,8 +19,9 @@ IMPORTANT:
 - Keep company names and titles exactly as written
 - For education, extract the degree type (B.Sc., M.A., MBA, etc.) and field separately
 - Skills should be individual items, not categories
-- NEVER use null values - omit optional fields entirely if no data exists
-- For education: if degree or field is unclear, use descriptive text (e.g., "Certificate", "Program") not null
+- NEVER use null, undefined, "optional", "N/A", or placeholder values - omit optional fields entirely if no data exists
+- For education: if degree or field is unclear, use descriptive text (e.g., "Certificate", "Program")
+- For years: extract actual years (e.g., "2015", "2020") - omit the year field if not specified
 
 Return JSON with this exact structure:
 {

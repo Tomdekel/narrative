@@ -357,18 +357,28 @@ export default function GenerateResumePage({ params }: PageProps) {
                   Education
                 </h3>
                 <div className="space-y-2">
-                  {generatedResume.education.map((edu, idx) => (
-                    <div key={idx} className="flex justify-between">
-                      <div>
-                        <span className="font-medium text-gray-900">{edu.institution}</span>
-                        <span className="text-gray-700">
-                          {' — '}{edu.degree}{edu.field ? ` in ${edu.field}` : ''}
-                          {edu.honors && <span className="text-gray-500"> ({edu.honors})</span>}
-                        </span>
-                      </div>
-                      <span className="text-sm text-gray-500">{edu.year}</span>
-                    </div>
-                  ))}
+                  {generatedResume.education
+                    .filter(edu => {
+                      const badValues = ['null', 'undefined', 'optional', 'n/a']
+                      const isBad = (val?: string) => !val || badValues.includes(val.toLowerCase())
+                      return !isBad(edu.institution) && !isBad(edu.degree)
+                    })
+                    .map((edu, idx) => {
+                      const badValues = ['null', 'undefined', 'optional', 'n/a']
+                      const isBad = (val?: string) => !val || badValues.includes(val.toLowerCase())
+                      return (
+                        <div key={idx} className="flex justify-between">
+                          <div>
+                            <span className="font-medium text-gray-900">{edu.institution}</span>
+                            <span className="text-gray-700">
+                              {' — '}{edu.degree}{!isBad(edu.field) ? ` in ${edu.field}` : ''}
+                              {!isBad(edu.honors) && <span className="text-gray-500"> ({edu.honors})</span>}
+                            </span>
+                          </div>
+                          {!isBad(edu.year) && <span className="text-sm text-gray-500">{edu.year}</span>}
+                        </div>
+                      )
+                    })}
                 </div>
               </div>
 

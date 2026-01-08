@@ -1,0 +1,29 @@
+# Ralph Progress Log - Narrative
+Started: 2026-01-07
+
+## Codebase Patterns
+- Next.js 14 with app router
+- Supabase for auth, DB, storage, vectors
+- Claims are first-class objects
+- Every resume bullet traces to a Claim
+- Deterministic ranking over prompt magic
+
+## Key Principles
+- No fabrication - aggressive reframing OK, inventing NOT OK
+- Context over completeness
+- Role intent > job description keywords
+- User remains in control
+
+## Key Files
+- app/layout.tsx - root layout
+- lib/supabase.ts - client
+- lib/claims.ts - claim operations
+- lib/matching.ts - claim-role matching
+
+## API Keys Required
+- NEXT_PUBLIC_SUPABASE_URL
+- NEXT_PUBLIC_SUPABASE_ANON_KEY
+- SUPABASE_SERVICE_ROLE_KEY
+- OPENAI_API_KEY (for embeddings and LLM)
+
+---
