@@ -359,23 +359,28 @@ export default function GenerateResumePage({ params }: PageProps) {
                 <div className="space-y-2">
                   {generatedResume.education
                     .filter(edu => {
-                      const badValues = ['null', 'undefined', 'optional', 'n/a']
-                      const isBad = (val?: string) => !val || badValues.includes(val.toLowerCase())
-                      return !isBad(edu.institution) && !isBad(edu.degree)
+                      const badValues = ['null', 'undefined', 'optional', 'n/a', 'program', 'certificate']
+                      const isBadInstitution = (val?: string) => !val || badValues.includes(val.toLowerCase().trim())
+                      const isBadDegree = (val?: string) => !val || ['null', 'undefined', 'optional', 'n/a'].includes(val.toLowerCase().trim())
+                      return !isBadInstitution(edu.institution) && !isBadDegree(edu.degree)
                     })
                     .map((edu, idx) => {
-                      const badValues = ['null', 'undefined', 'optional', 'n/a']
-                      const isBad = (val?: string) => !val || badValues.includes(val.toLowerCase())
+                      const isBadValue = (val?: string) => {
+                        if (!val) return true
+                        const lower = val.toLowerCase().trim()
+                        return ['null', 'undefined', 'optional', 'n/a'].includes(lower) ||
+                               lower.includes('not specified') || lower.includes('not provided')
+                      }
                       return (
                         <div key={idx} className="flex justify-between">
                           <div>
                             <span className="font-medium text-gray-900">{edu.institution}</span>
                             <span className="text-gray-700">
-                              {' — '}{edu.degree}{!isBad(edu.field) ? ` in ${edu.field}` : ''}
-                              {!isBad(edu.honors) && <span className="text-gray-500"> ({edu.honors})</span>}
+                              {' — '}{edu.degree}{!isBadValue(edu.field) ? ` in ${edu.field}` : ''}
+                              {!isBadValue(edu.honors) && <span className="text-gray-500"> ({edu.honors})</span>}
                             </span>
                           </div>
-                          {!isBad(edu.year) && <span className="text-sm text-gray-500">{edu.year}</span>}
+                          {!isBadValue(edu.year) && <span className="text-sm text-gray-500">{edu.year}</span>}
                         </div>
                       )
                     })}
