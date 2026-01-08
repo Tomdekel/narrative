@@ -359,8 +359,15 @@ export default function GenerateResumePage({ params }: PageProps) {
                 <div className="space-y-2">
                   {generatedResume.education
                     .filter(edu => {
-                      const badValues = ['null', 'undefined', 'optional', 'n/a', 'program', 'certificate']
-                      const isBadInstitution = (val?: string) => !val || badValues.includes(val.toLowerCase().trim())
+                      const badInstitutions = ['null', 'undefined', 'optional', 'n/a', 'program', 'certificate']
+                      const isBadInstitution = (val?: string) => {
+                        if (!val) return true
+                        const lower = val.toLowerCase().trim()
+                        // Filter if exact match or starts with common non-institution patterns
+                        return badInstitutions.includes(lower) ||
+                               lower.startsWith('data science program') ||
+                               lower.startsWith('program in')
+                      }
                       const isBadDegree = (val?: string) => !val || ['null', 'undefined', 'optional', 'n/a'].includes(val.toLowerCase().trim())
                       return !isBadInstitution(edu.institution) && !isBadDegree(edu.degree)
                     })
@@ -368,8 +375,9 @@ export default function GenerateResumePage({ params }: PageProps) {
                       const isBadValue = (val?: string) => {
                         if (!val) return true
                         const lower = val.toLowerCase().trim()
-                        return ['null', 'undefined', 'optional', 'n/a'].includes(lower) ||
-                               lower.includes('not specified') || lower.includes('not provided')
+                        const badExact = ['null', 'undefined', 'optional', 'n/a', 'graduated', 'completed', 'present']
+                        const badContains = ['not specified', 'not provided', 'not available']
+                        return badExact.includes(lower) || badContains.some(b => lower.includes(b))
                       }
                       return (
                         <div key={idx} className="flex justify-between">
