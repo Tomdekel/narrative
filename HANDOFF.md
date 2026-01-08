@@ -111,14 +111,25 @@ Required env vars in `.env.local`:
 
 ---
 
-## Next Steps (Priority Order)
+## Completed (Jan 7, 2026)
 
-1. ~~**Fix education parsing**~~ - DONE
-2. ~~**Enforce user guidelines**~~ - DONE
-3. ~~**Fix sidebar link**~~ - DONE
-4. ~~**Test end-to-end**~~ - Build passes, ready for manual testing
-5. **Deploy to production** - Push changes and verify on live site
-6. **Test resume generation** - Generate a new resume and verify fixes work
+1. ~~**Fix education parsing**~~ - DONE (multiple iterations to catch null, undefined, optional, etc.)
+2. ~~**Enforce user guidelines**~~ - DONE (moved to SYSTEM prompt with MANDATORY label)
+3. ~~**Fix sidebar link**~~ - DONE (both links now go to /dashboard/roles)
+4. ~~**Deploy to production**~~ - DONE (deployed to https://narrative-omega.vercel.app)
+5. ~~**Test resume generation**~~ - DONE (verified guidelines working, education filtering improved)
+
+## Known Remaining Issues
+
+- Education section still shows some placeholder values from the original CV parsing
+- The CV parser sometimes outputs "Data Science Program" as institution name instead of actual school
+- Model sometimes invents placeholder years like "Graduated" or "Completed" (now filtered in UI)
+
+## Next Steps
+
+1. **Improve CV parsing** - Better extraction of education data from source CV
+2. **Add education year extraction** - Parse actual graduation years from CV text
+3. **Consider re-processing existing CVs** - To get cleaner education data
 
 ---
 
